@@ -46,8 +46,8 @@ fn check_values(stock_changes: Vec<i32>, portfolio_claims: Vec<i32>, H: i32) -> 
                 mult *= (100 + stock_changes[k]) as f64 / 100.0;
             }
             let new_delta = (mult * 1000_000.0) as i32; // we need 10^6 accuracy to avoid
-                                                        // flointing point errors. if these were just 10^4, then we could have eg 10835 and
-                                                        // 10836 as both valid values for the same range.
+            // flointing point errors. if these were just 10^4, then we could have eg 10835 and
+            // 10836 as both valid values for the same range.
             let new_claim = Claim::new(new_delta, j as i32, i as i32);
             sell_before_possibilities[i].insert(new_claim);
             valid_claims.insert(new_delta, new_claim);
@@ -274,10 +274,10 @@ mod tests {
 
         let result = check_values(stock, claim, h);
         assert_eq!(result[0], (0, 5)); // so it bought at 0, sold at 2 (before crash), bought at 3,
-                                       // sold at 5
+        // sold at 5
         assert_eq!(result[1], (0, 5)); // bought at 0, sold at 5
         assert_eq!(result[2], (-1, -1)); // this would be (0, 5) if we didnt have the 10^6 scaling,
-                                         // as floating point errors would introduce -149 as a valid key.
+        // as floating point errors would introduce -149 as a valid key.
     }
 
     #[test]
