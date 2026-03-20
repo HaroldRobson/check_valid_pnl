@@ -21,7 +21,7 @@ My Assumptions:
 */
 #[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 struct Claim {
-    delta: i32, // in bsp
+    delta: i32, // in bsp * 10^2
     start: i32,
     end: i32,
 }
