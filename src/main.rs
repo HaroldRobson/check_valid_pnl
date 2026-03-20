@@ -37,20 +37,32 @@ fn check_values(stock_changes: Vec<i32>, portfolio_claims: Vec<i32>, H: i32) -> 
 
     let n = stock_changes.len();
     let h = H as usize;
+
+    // all the portfolio changes achievable by selling before day i
     let mut sell_before_possibilities: Vec<HashSet<Claim>> = vec![HashSet::new(); n + 2];
+
+    // all the portfolio change claims achievable. should contain same elements as sell_before_possibilities[n+1]
     let mut valid_claims: HashMap<i32, Claim> = HashMap::new();
+
     for i in h..n + 1 {
+        // find all claims possible before day i, with a window size >= h
         for j in 0..=i - h {
+            // so mult = portfolio change between j and i where j <= i+h
             let mut mult = 1.00;
             for k in j..i {
                 mult *= (100 + stock_changes[k]) as f64 / 100.0;
             }
             let new_delta = (mult * 1000_000.0) as i32; // we need 10^6 accuracy to avoid
-            // flointing point errors. if these were just 10^4, then we could have eg 10835 and
-            // 10836 as both valid values for the same range.
+                                                        // flointing point errors. if these were just 10^4, then we could have 10835 and
+                                                        // 10836 as both valid values for the same range.
+                                                        //insert mult as a standalone claim
             let new_claim = Claim::new(new_delta, j as i32, i as i32);
             sell_before_possibilities[i].insert(new_claim);
             valid_claims.insert(new_delta, new_claim);
+
+            // check if mult could be included in a previous strategy which has already sold.
+            // eg mult is from day 6 to day 8, and a previous strategy sold on day 4 (so this
+            // previous strategy is included in sell_before_possibilities[6])
             for s in sell_before_possibilities[j].clone() {
                 if s.end > j as i32 {
                     continue;
@@ -61,9 +73,13 @@ fn check_values(stock_changes: Vec<i32>, portfolio_claims: Vec<i32>, H: i32) -> 
                 valid_claims.insert(new_delta, new_claim);
             }
         }
+
+        // copy all the possibilities from day i to i+1
         let sell_before_i = sell_before_possibilities[i].clone();
         sell_before_possibilities[i + 1].extend(&sell_before_i);
     }
+
+    // bring from 10^6 back to 10^4 for comparison
     let mut valid_claims_scaled: HashMap<i32, (i32, i32)> = HashMap::new();
     for claim in &valid_claims {
         let claim = claim.1;
@@ -186,7 +202,7 @@ mod tests {
         //try again with 2
         let h = 2;
         let result = check_values(stock.clone(), claims.clone(), h);
-        // A 1-day trade would be 500 bps, but H=2, so it should fail
+        // these should both now be achievable
         assert_eq!(result[0], (0, 2));
         assert_eq!(result[1], (1, 3));
     }
@@ -274,10 +290,10 @@ mod tests {
 
         let result = check_values(stock, claim, h);
         assert_eq!(result[0], (0, 5)); // so it bought at 0, sold at 2 (before crash), bought at 3,
-        // sold at 5
+                                       // sold at 5
         assert_eq!(result[1], (0, 5)); // bought at 0, sold at 5
         assert_eq!(result[2], (-1, -1)); // this would be (0, 5) if we didnt have the 10^6 scaling,
-        // as floating point errors would introduce -149 as a valid key.
+                                         // as floating point errors would introduce -149 as a valid key.
     }
 
     #[test]
