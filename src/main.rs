@@ -283,6 +283,7 @@ mod tests {
     #[test]
     fn test_zero_change_days_long() {
         let mut stock = vec![0; 40];
+        stock[2] = 5;
         stock[3] = 2;
         stock[39] = 6;
         let h = 5;
